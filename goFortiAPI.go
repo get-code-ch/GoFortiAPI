@@ -2,8 +2,6 @@ package GoFortiAPI
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 )
@@ -14,16 +12,16 @@ type AccessToken struct {
 	ExpiresIn   int64  `json:"expires_in"`
 }
 
-// AuthPostBody Authentication POST request Body type
-type AuthPostBody struct {
-	AccountId string `json:"accountId"`
-	UserName  string `json:"userName"`
-	Password  string `json:"password"`
-}
-
 type FortiAPI struct {
+	Region      string
 	AccessToken AccessToken
 	HttpClient  *http.Client
+}
+
+type APICall struct {
+	Header http.Header
+	URL    string
+	Body   []byte
 }
 
 // Response interface definition
@@ -32,50 +30,46 @@ type Response interface {
 	String() string
 }
 
-// NewCloudFortiAPI function create new FortiAPI object for accessing FortiGate from FortiCloud
-func NewCloudFortiAPI(region string, account string, username string, password string) (*FortiAPI, error) {
-	// Initializing properties
+type Request interface {
+	Post() error
+	Get() error
+	API() APICall
+}
+
+// NewFortiAPI function create new FortiAPI object for accessing FortiGate from FortiCloud
+func NewFortiAPI(region string) *FortiAPI {
 	api := new(FortiAPI)
 	api.HttpClient = &http.Client{}
 	api.AccessToken = AccessToken{}
+	api.Region = region
 
-	// Getting AccessToken from FortiGate Cloud
-	authUrl := fmt.Sprintf("https://%s/forticloudapi/v1/auth", region)
-	authBody, _ := json.Marshal(AuthPostBody{account, username, password})
-
-	request, _ := http.NewRequest("POST", authUrl, bytes.NewReader(authBody))
-	request.Header.Set("Content-Type", "application/json")
-
-	return api, nil
+	return api
 }
 
-//GetRequest send a Get Request to FortiGate Cloud or directly to FortiGate
-func (api *FortiAPI) GetRequest(url string, response Response, accessToken string) (Response, error) {
+//GetRequest send a Get Request to FortiGate Cloud
+func (api *FortiAPI) GetRequest(request Request, response Response) error {
+	apiCall := request.API()
 
-	request, _ := http.NewRequest("GET", url, bytes.NewReader(nil))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	httpRequest, _ := http.NewRequest("GET", apiCall.URL, bytes.NewReader(apiCall.Body))
+	httpRequest.Header = apiCall.Header
 
-	if httpResponse, err := api.HttpClient.Do(request); err != nil {
-		return nil, err
+	if httpResponse, err := api.HttpClient.Do(httpRequest); err != nil {
+		return err
 	} else {
-		err := response.Init(httpResponse.Body)
-		return response, err
+		return response.Init(httpResponse.Body)
 	}
 }
 
-//PostRequest send a Get Request to FortiGate Cloud or directly to FortiGate
-func PostRequest(url string, response Response, accessToken string) (Response, error) {
+//PostRequest send a Post Request to FortiGate Cloud
+func (api *FortiAPI) PostRequest(request Request, response Response) error {
+	apiCall := request.API()
 
-	request, _ := http.NewRequest("GET", url, bytes.NewReader(nil))
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	client := &http.Client{}
+	httpRequest, _ := http.NewRequest("POST", apiCall.URL, bytes.NewReader(apiCall.Body))
+	httpRequest.Header = apiCall.Header
 
-	if httpResponse, err := client.Do(request); err != nil {
-		return nil, err
+	if httpResponse, err := api.HttpClient.Do(httpRequest); err != nil {
+		return err
 	} else {
-		err := response.Init(httpResponse.Body)
-		return response, err
+		return response.Init(httpResponse.Body)
 	}
 }
