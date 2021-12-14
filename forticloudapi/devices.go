@@ -57,6 +57,11 @@ func (r *DevicesGetResponse) Init(body io.ReadCloser) error {
 	if b, err := ioutil.ReadAll(body); err != nil {
 		return err
 	} else {
+		if b[0] == '{' {
+			b = append([]byte{'['}, b...)
+			b = append(b, ']')
+		}
+
 		if err := json.Unmarshal(b, &r); err != nil {
 			return err
 		}
@@ -105,4 +110,12 @@ func (request *DevicesGet) Post() error {
 
 func (request *DevicesGet) Get() error {
 	return request.api.GetRequest(request, request.Response)
+}
+
+func (request *DevicesGet) GetSn(sn string) error {
+	basePath := request.url.Path
+	request.url.Path = basePath + "/" + sn
+	err := request.api.GetRequest(request, request.Response)
+	request.url.Path = basePath
+	return err
 }
