@@ -57,6 +57,7 @@ func (r *DevicesGetResponse) Init(body io.ReadCloser) error {
 	if b, err := ioutil.ReadAll(body); err != nil {
 		return err
 	} else {
+		// If received response is not an array converting JSON to an array
 		if b[0] == '{' {
 			b = append([]byte{'['}, b...)
 			b = append(b, ']')
@@ -109,13 +110,12 @@ func (request *DevicesGet) Post() error {
 }
 
 func (request *DevicesGet) Get() error {
+	request.url.Path = "forticloudapi/v1/devices"
 	return request.api.GetRequest(request, request.Response)
 }
 
 func (request *DevicesGet) GetSn(sn string) error {
-	basePath := request.url.Path
-	request.url.Path = basePath + "/" + sn
+	request.url.Path = "forticloudapi/v1/devices/" + sn
 	err := request.api.GetRequest(request, request.Response)
-	request.url.Path = basePath
 	return err
 }
