@@ -1,14 +1,14 @@
 package forticloudapi
 
 import (
+	"github.com/get-code-ch/GoFortiAPI"
 	"testing"
 )
 
-var ctx *context
+var ctx *GoFortiAPI.Context
 
 func init() {
-	ctx = NewContext()
-
+	ctx = GoFortiAPI.NewContext()
 }
 
 func TestGetDevice(t *testing.T) {

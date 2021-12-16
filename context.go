@@ -1,20 +1,21 @@
-package forticloudapi
+package GoFortiAPI
 
 import (
 	"github.com/get-code-ch/GoFortiAPI"
+	"github.com/get-code-ch/GoFortiAPI/forticloudapi"
 	"github.com/get-code-ch/SecretManager"
 	"log"
 )
 
-type context struct {
+type Context struct {
 	AccessToken GoFortiAPI.AccessToken
 	FortiAPI    *GoFortiAPI.FortiAPI
 }
 
-func NewContext() *context {
+func NewContext() *Context {
 	var err error
 	var secret SecretManager.Secret
-	var authPost *AuthPost
+	var authPost *forticloudapi.AuthPost
 
 	vault := new(SecretManager.Vault)
 	if err = vault.Open(); err != nil {
@@ -32,12 +33,12 @@ func NewContext() *context {
 	password := secret.Password
 
 	// Creating new FortiAPI instance
-	ctx := new(context)
+	ctx := new(Context)
 	ctx.FortiAPI = GoFortiAPI.NewFortiAPI(region)
 
 	// Getting API token and automatically renew it
 	// Getting authentication from API
-	if authPost, err = NewAuthPost(ctx.FortiAPI, account, username, password); err != nil {
+	if authPost, err = forticloudapi.NewAuthPost(ctx.FortiAPI, account, username, password); err != nil {
 		log.Fatalf("Error setting authPost -> %v", err)
 	}
 
